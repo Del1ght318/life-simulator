@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>人生模拟器 - 真实AI版</title>
+    <title>人生模拟器 - AI决策助手</title>
     <style>
         body {
             font-family: 'Microsoft YaHei', sans-serif;
-            max-width: 900px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -17,13 +17,6 @@
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .api-config {
-            background: #e8f5e9;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #4caf50;
         }
         .situation {
             background: #e3f2fd;
@@ -51,40 +44,21 @@
         button:hover {
             background: #1976d2;
         }
-        .choice-btn {
-            background: #4caf50;
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
-        .choice-btn:hover {
-            background: #45a049;
-        }
-        .custom-btn {
-            background: #ff9800;
-        }
-        .custom-btn:hover {
-            background: #f57c00;
-        }
-        .biography {
-            background: #fff3e0;
-            padding: 25px;
+        .outcome {
+            background: #e8f5e9;
+            padding: 20px;
             border-radius: 8px;
-            margin: 20px 0;
-            border-left: 4px solid #ff9800;
-            line-height: 1.8;
+            margin-top: 20px;
             white-space: pre-wrap;
-        }
-        .analysis {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 8px;
-            margin: 20px 0;
-            line-height: 1.7;
-            white-space: pre-wrap;
+            line-height: 1.6;
         }
         .loading {
             color: #666;
             font-style: italic;
-            text-align: center;
-            padding: 20px;
         }
         .hidden {
             display: none;
@@ -95,7 +69,7 @@
             border-radius: 8px;
             margin-bottom: 20px;
         }
-        textarea, input, select {
+        textarea, input {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
@@ -106,8 +80,17 @@
             box-sizing: border-box;
         }
         textarea {
-            height: 120px;
+            height: 100px;
             resize: vertical;
+        }
+        .choice-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .choice-inputs input {
+            flex: 1;
+            margin-bottom: 0;
         }
         .tab-container {
             display: flex;
@@ -124,488 +107,435 @@
             color: #2196f3;
             font-weight: bold;
         }
-        .choice-item {
+        .history-item {
+            background: #f8f9fa;
+            padding: 15px;
             margin: 10px 0;
-            padding: 12px;
-            background: white;
             border-radius: 6px;
             border-left: 4px solid #2196f3;
         }
-        .api-status {
-            padding: 8px 12px;
-            border-radius: 4px;
-            margin: 10px 0;
-            font-size: 14px;
+        .delete-btn {
+            background: #ff4757;
+            padding: 4px 8px;
+            font-size: 12px;
+            float: right;
         }
-        .api-connected {
+        .delete-btn:hover {
+            background: #ff3742;
+        }
+        .api-setup {
             background: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #4caf50;
-        }
-        .api-disconnected {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #f44336;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c8e6c9;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎭 人生模拟器 - 真实AI版</h1>
+        <h1>🎮 人生模拟器 - AI决策助手</h1>
         
-        <div class="api-config">
-            <h3>🔑 API 配置</h3>
-            <input type="password" id="apiKeyInput" placeholder="sk-e9dc34fc06ea413c8c9a4ca8da43d0bc" style="width: 70%;">
-            <button onclick="saveAPIKey()">💾 保存API Key</button>
-            <div id="apiStatus" class="api-status api-disconnected">❌ 未连接AI服务</div>
-            <small>获取API Key：<a href="https://platform.deepseek.com/" target="_blank">DeepSeek平台</a></small>
-        </div>
-        
-        <div class="tab-container">
-            <div class="tab active" onclick="switchTab('create')">👤 我的困境</div>
-            <div class="tab" onclick="switchTab('choices')">🛣️ 人生选择</div>
-            <div class="tab" onclick="switchTab('result')">📖 人生故事</div>
+        <div class="api-setup">
+            <strong>💡 使用说明：</strong>
+            <p>这是一个AI驱动的人生决策模拟器，你可以：</p>
+            <ul>
+                <li>使用预设困境体验AI决策</li>
+                <li>创建自己的困境场景</li>
+                <li>查看不同选择的人生发展</li>
+            </ul>
+            <p><small>当前使用模拟数据，配置API Key后可体验真实AI生成</small></p>
         </div>
 
-        <!-- 个人信息标签页 -->
+        <div class="tab-container">
+            <div class="tab active" onclick="switchTab('create')">➕ 创建困境</div>
+            <div class="tab" onclick="switchTab('play')">🎮 开始游戏</div>
+            <div class="tab" onclick="switchTab('history')">📚 历史记录</div>
+        </div>
+
+        <!-- 创建困境标签页 -->
         <div id="createTab">
             <div class="input-section">
-                <h3>👤 请详细描述你的情况</h3>
-                <textarea id="userSituation" placeholder="请尽可能详细地描述：
-• 你的年龄、职业、生活状态
-• 具体面临的困境和矛盾
-• 你的性格特点、价值观
-• 你的担忧、期望和梦想
-• 任何相关的背景信息
-
-越详细，AI给出的建议越个性化！"></textarea>
+                <h3>📝 创建你的困境场景</h3>
+                <textarea id="customSituation" placeholder="描述你遇到的人生困境... 
+例如：我发现自己对现在的职业失去了热情，但已经在这个行业积累了10年经验。是应该转行追寻梦想，还是继续在熟悉的领域深耕？"></textarea>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
-                    <div>
-                        <label>MBTI人格类型（可选）</label>
-                        <select id="mbtiType">
-                            <option value="">请选择...</option>
-                            <option value="INTJ">INTJ - 建筑师</option>
-                            <option value="INTP">INTP - 逻辑学家</option>
-                            <option value="ENTJ">ENTJ - 指挥官</option>
-                            <option value="ENTP">ENTP - 辩论家</option>
-                            <option value="INFJ">INFJ - 提倡者</option>
-                            <option value="INFP">INFP - 调停者</option>
-                            <option value="ENFJ">ENFJ - 主人公</option>
-                            <option value="ENFP">ENFP - 竞选者</option>
-                            <option value="ISTJ">ISTJ - 物流师</option>
-                            <option value="ISFJ">ISFJ - 守卫者</option>
-                            <option value="ESTJ">ESTJ - 总经理</option>
-                            <option value="ESFJ">ESFJ - 执政官</option>
-                            <option value="ISTP">ISTP - 鉴赏家</option>
-                            <option value="ISFP">ISFP - 探险家</option>
-                            <option value="ESTP">ESTP - 企业家</option>
-                            <option value="ESFP">ESFP - 表演者</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>星座（可选）</label>
-                        <select id="zodiacSign">
-                            <option value="">请选择...</option>
-                            <option value="白羊座">白羊座 ♈</option>
-                            <option value="金牛座">金牛座 ♉</option>
-                            <option value="双子座">双子座 ♊</option>
-                            <option value="巨蟹座">巨蟹座 ♋</option>
-                            <option value="狮子座">狮子座 ♌</option>
-                            <option value="处女座">处女座 ♍</option>
-                            <option value="天秤座">天秤座 ♎</option>
-                            <option value="天蝎座">天蝎座 ♏</option>
-                            <option value="射手座">射手座 ♐</option>
-                            <option value="摩羯座">摩羯座 ♑</option>
-                            <option value="水瓶座">水瓶座 ♒</option>
-                            <option value="双鱼座">双鱼座 ♓</option>
-                        </select>
-                    </div>
+                <div class="choice-inputs">
+                    <input type="text" id="choice1" placeholder="选择一（例如：勇敢转行，从零开始）">
+                    <input type="text" id="choice2" placeholder="选择二（例如：维持现状，寻找副业）">
                 </div>
+                <div class="choice-inputs">
+                    <input type="text" id="choice3" placeholder="选择三（例如：在公司内部转岗）">
+                    <input type="text" id="choice4" placeholder="选择四（可选）">
+                </div>
+                
+                <button onclick="saveCustomSituation()">💾 保存这个困境</button>
+                <button onclick="startCustomGame()">🎮 立即开始这个困境</button>
+            </div>
 
-                <button onclick="generateChoices()">🎯 AI分析我的困境并生成选择</button>
+            <div>
+                <h3>💡 预设困境（点击使用）</h3>
+                <div class="choices">
+                    <button onclick="usePresetSituation(0)">💼 职场困境：晋升 vs 跳槽</button>
+                    <button onclick="usePresetSituation(1)">🤝 友情困境：借钱给朋友</button>
+                    <button onclick="usePresetSituation(2)">❤️ 感情困境：远距离关系</button>
+                    <button onclick="usePresetSituation(3)">🎯 人生选择：稳定 vs 梦想</button>
+                </div>
             </div>
         </div>
 
-        <!-- 选择道路标签页 -->
-        <div id="choicesTab" class="hidden">
-            <div class="situation">
-                <h3>你的困境：</h3>
-                <div id="displaySituation"></div>
+        <!-- 游戏进行标签页 -->
+        <div id="playTab" class="hidden">
+            <div class="situation" id="situation">
+                <!-- 困境描述会显示在这里 -->
             </div>
 
-            <div id="aiChoicesSection">
-                <h3>🛣️ AI推荐的人生道路</h3>
-                <div id="aiChoicesList"></div>
+            <div class="choices" id="choices">
+                <!-- 选择按钮会动态生成在这里 -->
             </div>
 
-            <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 15px 0;">
-                <h3>✏️ 自定义选择</h3>
-                <p>如果AI推荐的选择都不符合你的想法：</p>
-                <input type="text" id="customChoiceInput" placeholder="描述你自己想法的选择...">
-                <button class="custom-btn" onclick="addCustomChoice()">➕ 添加自定义选择</button>
+            <div id="outcomeContainer" class="hidden">
+                <h3>📖 故事发展：</h3>
+                <div class="outcome" id="outcome">
+                    <!-- 结果显示在这里 -->
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button onclick="resetGame()">🔄 新的困境</button>
+                    <button onclick="saveToHistory()">💾 保存到历史</button>
+                </div>
             </div>
 
-            <div id="customChoicesList"></div>
-
-            <button onclick="switchTab('create')">← 返回修改信息</button>
+            <div id="loading" class="loading hidden">
+                AI正在思考你的命运... ⏳
+            </div>
         </div>
 
-        <!-- 结果标签页 -->
-        <div id="resultTab" class="hidden">
-            <div class="situation">
-                <h3>你选择的道路：</h3>
-                <div id="selectedChoice"></div>
+        <!-- 历史记录标签页 -->
+        <div id="historyTab" class="hidden">
+            <h3>📚 你的决策历史</h3>
+            <div id="historyList">
+                <!-- 历史记录会显示在这里 -->
             </div>
-
-            <div id="resultContent" class="hidden">
-                <div class="biography" id="biography"></div>
-                <div class="analysis" id="analysis"></div>
-            </div>
-
-            <button onclick="switchTab('choices')">← 重新选择道路</button>
-            <button onclick="newSimulation()">🔄 全新的人生模拟</button>
-        </div>
-
-        <div id="loading" class="loading hidden">
-            <div>AI正在深度思考你的人生...</div>
-            <div style="font-size: 14px; margin-top: 10px; color: #888;">
-                🎭 分析个性特质 → 🛣️ 构思多元路径 → 📖 编织人生故事<br>
-                ⏳ 正在调用真实AI生成个性化内容...
-            </div>
+            <button onclick="clearHistory()" style="margin-top: 20px;">🗑️ 清空历史</button>
         </div>
     </div>
 
     <script>
-        // 状态管理
-        let userProfile = {};
-        let aiGeneratedChoices = [];
-        let customChoices = [];
-        let selectedChoice = '';
-        let currentAPIKey = '';
+        // 配置 - 修改这里启用真实AI
+        const USE_REAL_AI = true; // 设为 true 并配置API Key可使用真实AI
+        const API_KEY = 'sk-e9dc34fc06ea413c8c9a4ca8da43d0bc'; // 在这里填入你的API Key
+        const API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
-        // 初始化
-        function init() {
-            // 尝试从本地存储加载API Key
-            const savedKey = localStorage.getItem('deepseek_api_key');
-            if (savedKey) {
-                document.getElementById('apiKeyInput').value = savedKey;
-                currentAPIKey = savedKey;
-                updateAPIStatus(true);
+        // 预设困境
+        const presetSituations = [
+            {
+                situation: "你在公司工作了5年，表现优秀但晋升机会有限。今天收到竞争对手公司的offer，薪资上涨60%，但工作压力更大。你会：",
+                choices: ["接受挑战，跳槽到新公司", "留在原公司等待机会", "用offer和现任老板谈判加薪"]
+            },
+            {
+                situation: "好友创业失败欠下20万债务，向你求助。这是你攒了3年的买房首付。你会：",
+                choices: ["全力相助，借出全部存款", "借出一部分，说明自己的难处", "委婉拒绝但提供其他帮助"]
+            },
+            {
+                situation: "在旅行中遇到了灵魂伴侣，但你们生活在不同国家。旅行结束后，你会：",
+                choices: ["尝试远距离恋爱", "把美好留在回忆中", "为TA考虑移居"]
+            },
+            {
+                situation: "你在稳定的国企工作了8年，但内心一直有个创业梦想。现在有个不错的创业机会，你会：",
+                choices: ["辞职创业，追逐梦想", "保持工作，兼职尝试", "放弃梦想，安心工作"]
             }
-        }
+        ];
 
-        // 保存API Key
-        function saveAPIKey() {
-            const apiKey = document.getElementById('apiKeyInput').value.trim();
-            if (!apiKey) {
-                alert('请输入API Key');
-                return;
-            }
-            currentAPIKey = apiKey;
-            localStorage.setItem('deepseek_api_key', apiKey);
-            updateAPIStatus(true);
-            alert('API Key 已保存！');
-        }
-
-        // 更新API状态
-        function updateAPIStatus(connected) {
-            const statusElement = document.getElementById('apiStatus');
-            if (connected) {
-                statusElement.textContent = '✅ 已连接AI服务（使用真实AI）';
-                statusElement.className = 'api-status api-connected';
-            } else {
-                statusElement.textContent = '❌ 未连接AI服务';
-                statusElement.className = 'api-status api-disconnected';
-            }
-        }
+        // 游戏状态
+        let currentSituation = null;
+        let currentOutcome = null;
+        let gameHistory = JSON.parse(localStorage.getItem('lifeSimulatorHistory')) || [];
 
         // 切换标签页
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('[id$="Tab"]').forEach(tab => tab.classList.add('hidden'));
             
-            const tabIndex = {'create': 1, 'choices': 2, 'result': 3}[tabName];
+            const tabIndex = tabName === 'create' ? 1 : tabName === 'play' ? 2 : 3;
             document.querySelector(`.tab:nth-child(${tabIndex})`).classList.add('active');
             document.getElementById(tabName + 'Tab').classList.remove('hidden');
+            
+            if (tabName === 'history') {
+                loadHistory();
+            }
         }
 
-        // 生成选择
-        async function generateChoices() {
-            if (!currentAPIKey) {
-                alert('请先配置API Key！');
-                return;
-            }
+        // 使用预设困境
+        function usePresetSituation(index) {
+            const preset = presetSituations[index];
+            document.getElementById('customSituation').value = preset.situation;
+            document.getElementById('choice1').value = preset.choices[0] || '';
+            document.getElementById('choice2').value = preset.choices[1] || '';
+            document.getElementById('choice3').value = preset.choices[2] || '';
+            document.getElementById('choice4').value = preset.choices[3] || '';
+        }
 
-            const situation = document.getElementById('userSituation').value.trim();
-            const mbti = document.getElementById('mbtiType').value;
-            const zodiac = document.getElementById('zodiacSign').value;
-            
+        // 保存自定义困境
+        function saveCustomSituation() {
+            const situation = document.getElementById('customSituation').value.trim();
+            const choices = [
+                document.getElementById('choice1').value.trim(),
+                document.getElementById('choice2').value.trim(),
+                document.getElementById('choice3').value.trim(),
+                document.getElementById('choice4').value.trim()
+            ].filter(choice => choice !== '');
+
             if (!situation) {
-                alert('请详细描述你的困境！');
+                alert('请填写困境描述！');
+                return;
+            }
+            if (choices.length < 2) {
+                alert('请至少提供两个选择！');
                 return;
             }
 
-            userProfile = { situation, mbti, zodiac };
-            document.getElementById('displaySituation').textContent = situation;
+            const customSituation = {
+                situation: situation,
+                choices: choices,
+                isCustom: true,
+                timestamp: new Date().toLocaleString()
+            };
+
+            // 保存到本地存储
+            let savedSituations = JSON.parse(localStorage.getItem('customSituations')) || [];
+            savedSituations.push(customSituation);
+            localStorage.setItem('customSituations', JSON.stringify(savedSituations));
+
+            alert('困境已保存！可以在"开始游戏"中使用。');
+        }
+
+        // 开始自定义游戏
+        function startCustomGame() {
+            const situation = document.getElementById('customSituation').value.trim();
+            const choices = [
+                document.getElementById('choice1').value.trim(),
+                document.getElementById('choice2').value.trim(),
+                document.getElementById('choice3').value.trim(),
+                document.getElementById('choice4').value.trim()
+            ].filter(choice => choice !== '');
+
+            if (!situation || choices.length < 2) {
+                alert('请填写完整的困境描述和至少两个选择！');
+                return;
+            }
+
+            currentSituation = {
+                situation: situation,
+                choices: choices,
+                isCustom: true
+            };
+
+            switchTab('play');
+            displaySituation(currentSituation);
+        }
+
+        // 显示困境
+        function displaySituation(situation) {
+            document.getElementById('situation').textContent = situation.situation;
             
+            const choicesContainer = document.getElementById('choices');
+            choicesContainer.innerHTML = '';
+            
+            situation.choices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.textContent = `${index + 1}. ${choice}`;
+                button.onclick = () => makeDecision(choice);
+                choicesContainer.appendChild(button);
+            });
+            
+            document.getElementById('outcomeContainer').classList.add('hidden');
+        }
+
+        // 做出决策
+        async function makeDecision(choice) {
             document.getElementById('loading').classList.remove('hidden');
-            switchTab('choices');
+            document.getElementById('choices').style.opacity = '0.5';
+            
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true);
 
             try {
-                aiGeneratedChoices = await generateAIChoicesWithAPI(userProfile);
-                displayAIChoices(aiGeneratedChoices);
+                let outcome;
+                if (USE_REAL_AI && API_KEY && !API_KEY.includes('你的_DeepSeek_API_Key_在这里')) {
+                    outcome = await generateOutcomeWithAI(choice);
+                } else {
+                    outcome = await generateOutcomeLocal(choice);
+                }
+                
+                currentOutcome = {
+                    situation: currentSituation.situation,
+                    choice: choice,
+                    outcome: outcome,
+                    timestamp: new Date().toLocaleString()
+                };
+                
+                displayOutcome(outcome);
             } catch (error) {
-                console.error('生成选择失败:', error);
-                alert('生成选择失败：' + error.message);
+                console.error('错误:', error);
+                const outcome = await generateOutcomeLocal(choice);
+                displayOutcome(outcome + '\n\n(当前使用模拟数据，配置API后可体验真实AI)');
             } finally {
                 document.getElementById('loading').classList.add('hidden');
+                document.getElementById('choices').style.opacity = '1';
+                buttons.forEach(btn => btn.disabled = false);
             }
         }
 
-        // AI生成选择 - 使用真实API
-        async function generateAIChoicesWithAPI(profile) {
-            const personalityInfo = [];
-            if (profile.mbti) personalityInfo.push(`MBTI类型：${profile.mbti}`);
-            if (profile.zodiac) personalityInfo.push(`星座：${profile.zodiac}`);
-
-            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        // AI生成结局 - 使用真实API
+        async function generateOutcomeWithAI(choice) {
+            const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentAPIKey}`
+                    'Authorization': `Bearer ${API_KEY}`
                 },
                 body: JSON.stringify({
                     model: 'deepseek-chat',
                     messages: [
                         {
-                            role: "system",
-                            content: `你是一个资深的人生导师和创意思考者。请根据用户的详细情况，生成3-4个完全不同、有创意且实用的人生选择。
-
-要求：
-1. 每个选择都要充分考虑用户的个性、价值观和具体处境
-2. 选择要多样化：包含保守、平衡、激进等不同风格
-3. 每个选择都要有具体的行动方向和独特价值
-4. 避免陈词滥调，给出真正有洞察力的建议
-5. 用自然的中文描述，不要用编号
-
-请用 || 分隔每个选择。`
+                            role: 'system',
+                            content: `你是一个人生模拟器。根据用户的困境和选择，生成真实、有启发性的故事发展。
+要求分【短期结果】、【长期影响】、【最终结局】三个部分，每部分50-100字，最后给一句人生感悟。
+语言要生动具体，有细节描写。`
                         },
                         {
-                            role: "user",
-                            content: `这是我的详细情况：
-${profile.situation}
-
-${personalityInfo.length > 0 ? '个性信息：' + personalityInfo.join('，') : ''}
-
-请基于我的具体情况，给我一些人生道路的建议：`
+                            role: 'user',
+                            content: `【困境】\n${currentSituation.situation}\n\n【我的选择】\n${choice}\n\n请生成这个选择带来的故事发展：`
                         }
                     ],
                     max_tokens: 800,
-                    temperature: 0.9, // 更高的温度值让回答更多样化
-                    frequency_penalty: 0.5 // 避免重复
+                    temperature: 0.8
                 })
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`API请求失败: ${response.status} - ${errorText}`);
+                throw new Error(`API请求失败: ${response.status}`);
             }
-            
+
             const data = await response.json();
-            const content = data.choices[0].message.content;
-            
-            // 解析选择
-            const choices = content.split('||')
-                .filter(choice => choice.trim().length > 10) // 过滤掉太短的选择
-                .map(choice => choice.trim())
-                .slice(0, 4); // 最多4个选择
-            
-            if (choices.length < 2) {
-                // 如果解析失败，尝试其他方式
-                const lines = content.split('\n').filter(line => line.trim().length > 20);
-                return lines.slice(0, 4);
-            }
-            
-            return choices;
+            return data.choices[0].message.content;
         }
 
-        // 显示AI选择
-        function displayAIChoices(choices) {
-            const container = document.getElementById('aiChoicesList');
-            container.innerHTML = '';
+        // 本地生成结局 - 模拟数据
+        async function generateOutcomeLocal(choice) {
+            // 模拟网络延迟
+            await new Promise(resolve => setTimeout(resolve, 1500));
             
-            if (choices.length === 0) {
-                container.innerHTML = '<p>未能生成选择，请尝试重新描述你的困境</p>';
-                return;
-            }
+            const outcomes = [
+                `🚀【短期结果】你选择了"${choice}"，这个决定让你面临新的挑战和机遇。初期可能会有些不适，但你在不断适应中成长。
+
+🌅【长期影响】随着时间的推移，这个选择的影响逐渐显现。你发现了之前未曾预料的机会，也遇到了需要克服的困难。
+
+🎯【最终结局】多年后回顾，这个选择成为了你人生的重要转折点。它塑造了现在的你，也带来了宝贵的人生经验。
+
+💡人生感悟：每个选择都是一次成长的机会，重要的是从中学习和前进。`,
+
+                `📖【故事发展】你决定"${choice}"，这个选择开启了一段新的人生旅程。
+
+短期内，你需要调整心态面对变化，可能会经历一些波折，但也会收获成长。
+
+长期来看，这个决定会影响你的人生轨迹，带来新的视野和可能性。
+
+最终，你会发现人生没有绝对的对错，每个选择都值得珍惜。`,
+
+                `🌟【人生篇章】选择"${choice}"后，你的人生展开了新的篇章。
+
+【短期】前三个月是适应期，你学会了新的技能，认识了新的朋友。
+
+【中期】一年后，你在这个选择的基础上建立了新的生活模式。
+
+【长期】五年后回头看，这个决定塑造了你独特的人生路径。
+
+💫感悟：勇敢选择，坦然接受，这就是人生。`
+            ];
             
-            choices.forEach((choice, index) => {
-                const choiceElement = document.createElement('div');
-                choiceElement.className = 'choice-item';
-                choiceElement.innerHTML = `
-                    <button class="choice-btn" onclick="selectChoice('${choice.replace(/'/g, "\\'")}')">
-                        🛣️ 选择 ${index + 1}: ${choice}
-                    </button>
-                `;
-                container.appendChild(choiceElement);
-            });
+            return outcomes[Math.floor(Math.random() * outcomes.length)];
         }
 
-        // 添加自定义选择
-        function addCustomChoice() {
-            const customChoice = document.getElementById('customChoiceInput').value.trim();
-            if (!customChoice) {
-                alert('请输入你的选择！');
-                return;
-            }
-
-            customChoices.push(customChoice);
-            
-            const container = document.getElementById('customChoicesList');
-            const choiceElement = document.createElement('div');
-            choiceElement.className = 'choice-item';
-            choiceElement.innerHTML = `
-                <button class="custom-btn" onclick="selectChoice('${customChoice.replace(/'/g, "\\'")}')">
-                    ✨ 我的自定义选择: ${customChoice}
-                </button>
-            `;
-            container.appendChild(choiceElement);
-            
-            document.getElementById('customChoiceInput').value = '';
+        // 显示结局
+        function displayOutcome(outcome) {
+            document.getElementById('outcome').textContent = outcome;
+            document.getElementById('outcomeContainer').classList.remove('hidden');
         }
 
-        // 选择道路
-        async function selectChoice(choice) {
-            if (!currentAPIKey) {
-                alert('请先配置API Key！');
-                return;
-            }
-
-            selectedChoice = choice;
-            document.getElementById('selectedChoice').textContent = choice;
-            
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('resultContent').classList.add('hidden');
-            switchTab('result');
-
-            try {
-                const [biography, analysis] = await generateBiographyAndAnalysisWithAPI(choice);
-                displayResults(biography, analysis);
-            } catch (error) {
-                console.error('生成结果失败:', error);
-                alert('生成人生故事失败：' + error.message);
-            } finally {
-                document.getElementById('loading').classList.add('hidden');
-            }
-        }
-
-        // 生成传记和分析 - 使用真实API
-        async function generateBiographyAndAnalysisWithAPI(choice) {
-            const personalityInfo = [];
-            if (userProfile.mbti) personalityInfo.push(`MBTI：${userProfile.mbti}`);
-            if (userProfile.zodiac) personalityInfo.push(`星座：${userProfile.zodiac}`);
-
-            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentAPIKey}`
-                },
-                body: JSON.stringify({
-                    model: 'deepseek-chat',
-                    messages: [
-                        {
-                            role: "system",
-                            content: `你是一个富有同理心的传记作家和人生策略师。请根据用户的详细情况和选择，创作一个生动真实的人生故事和深度分析。
-
-请创作两个部分：
-
-【人生传记】
-用第一人称"我"的视角，写一个真实感人的短篇传记，描述选择这条道路后5-8年的人生历程。要求：
-- 完全基于用户的性格、背景和选择
-- 包含真实的情感起伏、挑战和成长
-- 体现用户的个性特质
-- 有具体的细节和转折点
-- 语言生动，像在讲述真实人生故事
-
-【深度分析】
-从客观角度分析这条道路，要求：
-- 具体会遇到的挑战和困难（不要用概率）
-- 可能出现的意外情况和转机
-- 需要特别注意的事项和陷阱
-- 潜在的成长机会和收获
-- 实用的建议和行动步骤
-
-请用自然、人性化的语言，就像朋友间的深度对话。`
-                        },
-                        {
-                            role: "user",
-                            content: `我的详细情况：${userProfile.situation}
-${personalityInfo.length > 0 ? '我的个性：' + personalityInfo.join('，') : ''}
-我选择的道路：${choice}
-
-请为我创作人生传记和深度分析：`
-                        }
-                    ],
-                    max_tokens: 2000,
-                    temperature: 0.85,
-                    frequency_penalty: 0.3
-                })
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`API请求失败: ${response.status} - ${errorText}`);
-            }
-            
-            const data = await response.json();
-            const content = data.choices[0].message.content;
-            
-            // 智能分割传记和分析
-            let biography, analysis;
-            
-            if (content.includes('【人生传记】') && content.includes('【深度分析】')) {
-                const parts = content.split('【深度分析】');
-                biography = parts[0].replace('【人生传记】', '').trim();
-                analysis = '【深度分析】' + parts[1];
-            } else if (content.includes('人生传记') && content.includes('深度分析')) {
-                const parts = content.split('深度分析');
-                biography = parts[0].replace('人生传记', '').trim();
-                analysis = '深度分析' + parts[1];
-            } else {
-                // 如果找不到明确分隔，平均分割
-                const midPoint = Math.floor(content.length / 2);
-                biography = content.substring(0, midPoint);
-                analysis = content.substring(midPoint);
-            }
-            
-            return [biography, analysis];
-        }
-
-        // 显示结果
-        function displayResults(biography, analysis) {
-            document.getElementById('biography').textContent = biography;
-            document.getElementById('analysis').textContent = analysis;
-            document.getElementById('resultContent').classList.remove('hidden');
-        }
-
-        // 新的模拟
-        function newSimulation() {
-            userProfile = {};
-            aiGeneratedChoices = [];
-            customChoices = [];
-            selectedChoice = '';
-            document.getElementById('userSituation').value = '';
-            document.getElementById('mbtiType').value = '';
-            document.getElementById('zodiacSign').value = '';
-            document.getElementById('customChoicesList').innerHTML = '';
-            document.getElementById('aiChoicesList').innerHTML = '';
+        // 重置游戏
+        function resetGame() {
+            document.getElementById('customSituation').value = '';
+            document.getElementById('choice1').value = '';
+            document.getElementById('choice2').value = '';
+            document.getElementById('choice3').value = '';
+            document.getElementById('choice4').value = '';
             switchTab('create');
         }
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', init);
+        // 保存到历史
+        function saveToHistory() {
+            if (currentOutcome) {
+                gameHistory.push(currentOutcome);
+                localStorage.setItem('lifeSimulatorHistory', JSON.stringify(gameHistory));
+                alert('已保存到历史记录！');
+                loadHistory();
+            }
+        }
+
+        // 加载历史
+        function loadHistory() {
+            const historyList = document.getElementById('historyList');
+            gameHistory = JSON.parse(localStorage.getItem('lifeSimulatorHistory')) || [];
+            
+            if (gameHistory.length === 0) {
+                historyList.innerHTML = '<p>暂无历史记录</p>';
+                return;
+            }
+            
+            historyList.innerHTML = gameHistory.map((item, index) => `
+                <div class="history-item">
+                    <button class="delete-btn" onclick="deleteHistoryItem(${index})">删除</button>
+                    <strong>${item.timestamp}</strong><br>
+                    <strong>困境：</strong>${item.situation}<br>
+                    <strong>选择：</strong>${item.choice}<br>
+                    <strong>结果：</strong>${item.outcome.substring(0, 100)}...
+                </div>
+            `).join('');
+        }
+
+        // 删除历史项
+        function deleteHistoryItem(index) {
+            if (confirm('确定要删除这条记录吗？')) {
+                gameHistory.splice(index, 1);
+                localStorage.setItem('lifeSimulatorHistory', JSON.stringify(gameHistory));
+                loadHistory();
+            }
+        }
+
+        // 清空历史
+        function clearHistory() {
+            if (confirm('确定要清空所有历史记录吗？')) {
+                gameHistory = [];
+                localStorage.removeItem('lifeSimulatorHistory');
+                loadHistory();
+            }
+        }
+
+        // 初始化 - 加载第一个预设困境
+        function initGame() {
+            const firstSituation = presetSituations[0];
+            document.getElementById('customSituation').value = firstSituation.situation;
+            document.getElementById('choice1').value = firstSituation.choices[0] || '';
+            document.getElementById('choice2').value = firstSituation.choices[1] || '';
+            document.getElementById('choice3').value = firstSituation.choices[2] || '';
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initGame();
+            loadHistory();
+        });
     </script>
 </body>
 </html>
