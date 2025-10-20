@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人生模拟器 - AI决策助手</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .situation {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background: #2196f3;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .outcome {
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        .hidden {
+            display: none;
+        }
+        .input-section {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        textarea, input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        .choice-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .choice-inputs input {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        .tab.active {
+            border-bottom-color: #2196f3;
+            color: #2196f3;
+            font-weight: bold;
+        }
+        .history-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 4px solid #2196f3;
+        }
+        .delete-btn {
+            background: #ff4757;
+            padding: 4px 8px;
+            font-size: 12px;
+            float: right;
+        }
+        .delete-btn:hover {
+            background: #ff3742;
+        }
+        .api-setup {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c8e6c9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 人生模拟器 - AI决策助手</h1>
+        
+        <div class="api-setup">
+            <strong>💡 使用说明：</strong>
+            <p>这是一个AI驱动的人生决策模拟器，你可以：</p>
+            <ul>
+                <li>使用预设困境体验AI决策</li>
+                <li>创建自己的困境场景</li>
+                <li>查看不同选择的人生发展</li>
+            </ul>
+            <p><small>当前使用模拟数据，配置API Key后可体验真实AI生成</small></p>
+        </div>
+
+        <div class="tab-container">
+            <div class="tab active" onclick="switchTab('create')">➕ 创建困境</div>
+            <div class="tab" onclick="switchTab('play')">🎮 开始游戏</div>
+            <div class="tab" onclick="switchTab('history')">📚 历史记录</div>
+        </div>
+
+        <!-- 创建困境标签页 -->
+        <div id="createTab">
+            <div class="input-section">
+                <h3>📝 创建你的困境场景</h3>
+                <textarea id="customSituation" placeholder="描述你遇到的人生困境... 
+例如：我发现自己对现在的职业失去了热情，但已经在这个行业积累了10年经验。是应该转行追寻梦想，还是继续在熟悉的领域深耕？"></textarea>
+                
+                <div class="choice-inputs">
+                    <input type="text" id="choice1" placeholder="选择一（例如：勇敢转行，从零开始）">
+                    <input type="text" id="choice2" placeholder="选择二（例如：维持现状，寻找副业）">
+                </div>
+                <div class="choice-inputs">
+                    <input type="text" id="choice3" placeholder="选择三（例如：在公司内部转岗）">
+                    <input type="text" id="choice4" placeholder="选择四（可选）">
+                </div>
+                
+                <button onclick="saveCustomSituation()">💾 保存这个困境</button>
+                <button onclick="startCustomGame()">🎮 立即开始这个困境</button>
+            </div>
+
+            <div>
+                <h3>💡 预设困境（点击使用）</h3>
+                <div class="choices">
+                    <button onclick="usePresetSituation(0)">💼 职场困境：晋升 vs 跳槽</button>
+                    <button onclick="usePresetSituation(1)">🤝 友情困境：借钱给朋友</button>
+                    <button onclick="usePresetSituation(2)">❤️ 感情困境：远距离关系</button>
+                    <button onclick="usePresetSituation(3)">🎯 人生选择：稳定 vs 梦想</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏进行标签页 -->
+        <div id="playTab" class="hidden">
+            <div class="situation" id="situation">
+                <!-- 困境描述会显示在这里 -->
+            </div>
+
+            <div class="choices" id="choices">
+                <!-- 选择按钮会动态生成在这里 -->
+            </div>
+
+            <div id="outcomeContainer" class="hidden">
+                <h3>📖 故事发展：</h3>
+                <div class="outcome" id="outcome">
+                    <!-- 结果显示在这里 -->
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button onclick="resetGame()">🔄 新的困境</button>
+                    <button onclick="saveToHistory()">💾 保存到历史</button>
+                </div>
+            </div>
+
+            <div id="loading" class="loading hidden">
+                AI正在思考你的命运... ⏳
+            </div>
+        </div>
+
+        <!-- 历史记录标签页 -->
+        <div id="historyTab" class="hidden">
+            <h3>📚 你的决策历史</h3>
+            <div id="historyList">
+                <!-- 历史记录会显示在这里 -->
+            </div>
+            <button onclick="clearHistory()" style="margin-top: 20px;">🗑️ 清空历史</button>
+        </div>
+    </div>
+
+    <script>
+        // 配置 - 修改这里启用真实AI
+        const USE_REAL_AI = true; // 设为 true 并配置API Key可使用真实AI
+        const API_KEY = 'sk-e9dc34fc06ea413c8c9a4ca8da43d0bc'; // 在这里填入你的API Key
+        const API_URL = 'https://api.deepseek.com/v1/chat/completions';
+
+        // 预设困境
+        const presetSituations = [
+            {
+                situation: "你在公司工作了5年，表现优秀但晋升机会有限。今天收到竞争对手公司的offer，薪资上涨60%，但工作压力更大。你会：",
+                choices: ["接受挑战，跳槽到新公司", "留在原公司等待机会", "用offer和现任老板谈判加薪"]
+            },
+            {
+                situation: "好友创业失败欠下20万债务，向你求助。这是你攒了3年的买房首付。你会：",
+                choices: ["全力相助，借出全部存款", "借出一部分，说明自己的难处", "委婉拒绝但提供其他帮助"]
+            },
+            {
+                situation: "在旅行中遇到了灵魂伴侣，但你们生活在不同国家。旅行结束后，你会：",
+                choices: ["尝试远距离恋爱", "把美好留在回忆中", "为TA考虑移居"]
+            },
+            {
+                situation: "你在稳定的国企工作了8年，但内心一直有个创业梦想。现在有个不错的创业机会，你会：",
+                choices: ["辞职创业，追逐梦想", "保持工作，兼职尝试", "放弃梦想，安心工作"]
+            }
+        ];
+
+        // 游戏状态
+        let currentSituation = null;
+        let currentOutcome = null;
+        let gameHistory = JSON.parse(localStorage.getItem('lifeSimulatorHistory')) || [];
+
+        // 切换标签页
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('[id$="Tab"]').forEach(tab => tab.classList.add('hidden'));
+            
+            const tabIndex = tabName === 'create' ? 1 : tabName === 'play' ? 2 : 3;
+            document.querySelector(`.tab:nth-child(${tabIndex})`).classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+            
+            if (tabName === 'history') {
+                loadHistory();
+            }
+        }
+
+        // 使用预设困境
+        function usePresetSituation(index) {
+            const preset = presetSituations[index];
+            document.getElementById('customSituation').value = preset.situation;
+            document.getElementById('choice1').value = preset.choices[0] || '';
+            document.getElementById('choice2').value = preset.choices[1] || '';
+            document.getElementById('choice3').value = preset.choices[2] || '';
+            document.getElementById('choice4').value = preset.choices[3] || '';
+        }
+
+        // 保存自定义困境
+        function saveCustomSituation() {
+            const situation = document.getElementById('customSituation').value.trim();
+            const choices = [
+                document.getElementById('choice1').value.trim(),
+                document.getElementById('choice2').value.trim(),
+                document.getElementById('choice3').value.trim(),
+                document.getElementById('choice4').value.trim()
+            ].filter(choice => choice !== '');
+
+            if (!situation) {
+                alert('请填写困境描述！');
+                return;
+            }
+            if (choices.length < 2) {
+                alert('请至少提供两个选择！');
+                return;
+            }
+
+            const customSituation = {
+                situation: situation,
+                choices: choices,
+                isCustom: true,
+                timestamp: new Date().toLocaleString()
+            };
+
+            // 保存到本地存储
+            let savedSituations = JSON.parse(localStorage.getItem('customSituations')) || [];
+            savedSituations.push(customSituation);
+            localStorage.setItem('customSituations', JSON.stringify(savedSituations));
+
+            alert('困境已保存！可以在"开始游戏"中使用。');
+        }
+
+        // 开始自定义游戏
+        function startCustomGame() {
+            const situation = document.getElementById('customSituation').value.trim();
+            const choices = [
+                document.getElementById('choice1').value.trim(),
+                document.getElementById('choice2').value.trim(),
+                document.getElementById('choice3').value.trim(),
+                document.getElementById('choice4').value.trim()
+            ].filter(choice => choice !== '');
+
+            if (!situation || choices.length < 2) {
+                alert('请填写完整的困境描述和至少两个选择！');
+                return;
+            }
+
+            currentSituation = {
+                situation: situation,
+                choices: choices,
+                isCustom: true
+            };
+
+            switchTab('play');
+            displaySituation(currentSituation);
+        }
+
+        // 显示困境
+        function displaySituation(situation) {
+            document.getElementById('situation').textContent = situation.situation;
+            
+            const choicesContainer = document.getElementById('choices');
+            choicesContainer.innerHTML = '';
+            
+            situation.choices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.textContent = `${index + 1}. ${choice}`;
+                button.onclick = () => makeDecision(choice);
+                choicesContainer.appendChild(button);
+            });
+            
+            document.getElementById('outcomeContainer').classList.add('hidden');
+        }
+
+        // 做出决策
+        async function makeDecision(choice) {
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('choices').style.opacity = '0.5';
+            
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true);
+
+            try {
+                let outcome;
+                if (USE_REAL_AI && API_KEY && !API_KEY.includes('你的_DeepSeek_API_Key_在这里')) {
+                    outcome = await generateOutcomeWithAI(choice);
+                } else {
+                    outcome = await generateOutcomeLocal(choice);
+                }
+                
+                currentOutcome = {
+                    situation: currentSituation.situation,
+                    choice: choice,
+                    outcome: outcome,
+                    timestamp: new Date().toLocaleString()
+                };
+                
+                displayOutcome(outcome);
+            } catch (error) {
+                console.error('错误:', error);
+                const outcome = await generateOutcomeLocal(choice);
+                displayOutcome(outcome + '\n\n(当前使用模拟数据，配置API后可体验真实AI)');
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('choices').style.opacity = '1';
+                buttons.forEach(btn => btn.disabled = false);
+            }
+        }
+
+        // AI生成结局 - 使用真实API
+        async function generateOutcomeWithAI(choice) {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: `你是一个人生模拟器。根据用户的困境和选择，生成真实、有启发性的故事发展。
+要求分【短期结果】、【长期影响】、【最终结局】三个部分，每部分50-100字，最后给一句人生感悟。
+语言要生动具体，有细节描写。`
+                        },
+                        {
+                            role: 'user',
+                            content: `【困境】\n${currentSituation.situation}\n\n【我的选择】\n${choice}\n\n请生成这个选择带来的故事发展：`
+                        }
+                    ],
+                    max_tokens: 800,
+                    temperature: 0.8
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`API请求失败: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.choices[0].message.content;
+        }
+
+        // 本地生成结局 - 模拟数据
+        async function generateOutcomeLocal(choice) {
+            // 模拟网络延迟
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            const outcomes = [
+                `🚀【短期结果】你选择了"${choice}"，这个决定让你面临新的挑战和机遇。初期可能会有些不适，但你在不断适应中成长。
+
+🌅【长期影响】随着时间的推移，这个选择的影响逐渐显现。你发现了之前未曾预料的机会，也遇到了需要克服的困难。
+
+🎯【最终结局】多年后回顾，这个选择成为了你人生的重要转折点。它塑造了现在的你，也带来了宝贵的人生经验。
+
+💡人生感悟：每个选择都是一次成长的机会，重要的是从中学习和前进。`,
+
+                `📖【故事发展】你决定"${choice}"，这个选择开启了一段新的人生旅程。
+
+短期内，你需要调整心态面对变化，可能会经历一些波折，但也会收获成长。
+
+长期来看，这个决定会影响你的人生轨迹，带来新的视野和可能性。
+
+最终，你会发现人生没有绝对的对错，每个选择都值得珍惜。`,
+
+                `🌟【人生篇章】选择"${choice}"后，你的人生展开了新的篇章。
+
+【短期】前三个月是适应期，你学会了新的技能，认识了新的朋友。
+
+【中期】一年后，你在这个选择的基础上建立了新的生活模式。
+
+【长期】五年后回头看，这个决定塑造了你独特的人生路径。
+
+💫感悟：勇敢选择，坦然接受，这就是人生。`
+            ];
+            
+            return outcomes[Math.floor(Math.random() * outcomes.length)];
+        }
+
+        // 显示结局
+        function displayOutcome(outcome) {
+            document.getElementById('outcome').textContent = outcome;
+            document.getElementById('outcomeContainer').classList.remove('hidden');
+        }
+
+        // 重置游戏
+        function resetGame() {
+            document.getElementById('customSituation').value = '';
+            document.getElementById('choice1').value = '';
+            document.getElementById('choice2').value = '';
+            document.getElementById('choice3').value = '';
+            document.getElementById('choice4').value = '';
+            switchTab('create');
+        }
+
+        // 保存到历史
+        function saveToHistory() {
+            if (currentOutcome) {
+                gameHistory.push(currentOutcome);
+                localStorage.setItem('lifeSimulatorHistory', JSON.stringify(gameHistory));
+                alert('已保存到历史记录！');
+                loadHistory();
+            }
+        }
+
+        // 加载历史
+        function loadHistory() {
+            const historyList = document.getElementById('historyList');
+            gameHistory = JSON.parse(localStorage.getItem('lifeSimulatorHistory')) || [];
+            
+            if (gameHistory.length === 0) {
+                historyList.innerHTML = '<p>暂无历史记录</p>';
+                return;
+            }
+            
+            historyList.innerHTML = gameHistory.map((item, index) => `
+                <div class="history-item">
+                    <button class="delete-btn" onclick="deleteHistoryItem(${index})">删除</button>
+                    <strong>${item.timestamp}</strong><br>
+                    <strong>困境：</strong>${item.situation}<br>
+                    <strong>选择：</strong>${item.choice}<br>
+                    <strong>结果：</strong>${item.outcome.substring(0, 100)}...
+                </div>
+            `).join('');
+        }
+
+        // 删除历史项
+        function deleteHistoryItem(index) {
+            if (confirm('确定要删除这条记录吗？')) {
+                gameHistory.splice(index, 1);
+                localStorage.setItem('lifeSimulatorHistory', JSON.stringify(gameHistory));
+                loadHistory();
+            }
+        }
+
+        // 清空历史
+        function clearHistory() {
+            if (confirm('确定要清空所有历史记录吗？')) {
+                gameHistory = [];
+                localStorage.removeItem('lifeSimulatorHistory');
+                loadHistory();
+            }
+        }
+
+        // 初始化 - 加载第一个预设困境
+        function initGame() {
+            const firstSituation = presetSituations[0];
+            document.getElementById('customSituation').value = firstSituation.situation;
+            document.getElementById('choice1').value = firstSituation.choices[0] || '';
+            document.getElementById('choice2').value = firstSituation.choices[1] || '';
+            document.getElementById('choice3').value = firstSituation.choices[2] || '';
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initGame();
+            loadHistory();
+        });
+    </script>
+</body>
+</html>
